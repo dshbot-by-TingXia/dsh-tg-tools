@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Telegram 工具",
+    "description": "让 DSH 会话读写 Telegram chat：列 chat、缓存历史、发消息/图片、转发/编辑/删除、成员与 typing。"
+  }
+}

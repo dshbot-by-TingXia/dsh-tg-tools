@@ -1,0 +1,42 @@
+# DSH Telegram 工具：每个工具一个组件，插件页里可以逐个开关。
+#   · 列 chat / 查 chat / 看本地缓存历史 / 管理员
+#   · 发文字 / 发图片 / 转发 / 编辑 / 删除 / typing
+#   · 收消息轮询（可选，默认关闭；同一 token 同时只能有一个轮询者）
+- insert:
+    - id: tg-tools-list-chats
+      name: 'dsh-tg-tools/tools/tg-list-chats'
+    - id: tg-tools-get-chat
+      name: 'dsh-tg-tools/tools/tg-get-chat'
+    - id: tg-tools-get-history
+      name: 'dsh-tg-tools/tools/tg-get-history'
+    - id: tg-tools-get-chat-members
+      name: 'dsh-tg-tools/tools/tg-get-chat-members'
+    - id: tg-tools-send-message
+      name: 'dsh-tg-tools/tools/tg-send-message'
+    - id: tg-tools-send-photo
+      name: 'dsh-tg-tools/tools/tg-send-photo'
+    - id: tg-tools-send-sticker
+      name: 'dsh-tg-tools/tools/tg-send-sticker'
+    - id: tg-tools-send-animation
+      name: 'dsh-tg-tools/tools/tg-send-animation'
+    - id: tg-tools-send-dice
+      name: 'dsh-tg-tools/tools/tg-send-dice'
+    - id: tg-tools-set-reaction
+      name: 'dsh-tg-tools/tools/tg-set-reaction'
+    - id: tg-tools-get-sticker-set
+      name: 'dsh-tg-tools/tools/tg-get-sticker-set'
+    - id: tg-tools-forward-message
+      name: 'dsh-tg-tools/tools/tg-forward-message'
+    - id: tg-tools-edit-message
+      name: 'dsh-tg-tools/tools/tg-edit-message'
+    - id: tg-tools-delete-message
+      name: 'dsh-tg-tools/tools/tg-delete-message'
+    - id: tg-tools-send-typing
+      name: 'dsh-tg-tools/tools/tg-send-typing'
+    - id: tg-tools-inbox
+      name: 'dsh-tg-tools/tools/tg-inbox'
+    # 包根行：承载 targetSession 的 HTTP 接口；工具子路径行不会被 client 扫描。
+    - id: tg-tools-root
+      name: 'dsh-tg-tools'
+      config:
+        carrier: true

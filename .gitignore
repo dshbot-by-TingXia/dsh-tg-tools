@@ -1,0 +1,11 @@
+node_modules/
+*.tgz
+*.log
+.DS_Store
+.env
+.gh_token
+tg-tools-config.json
+tg-tools-state.json
+test/.tmp/
+.gitconfig-local
+.git-cred*

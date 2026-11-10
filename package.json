@@ -1,0 +1,82 @@
+{
+  "name": "dsh-tg-tools",
+  "version": "1.0.0",
+  "description": "给 DSH 会话用的 Telegram 工具：列 chat、看缓存消息、发消息/图片/贴纸/GIF/骰子、加 reaction、转发/编辑/删除、查成员与 typing，可选的收消息轮询与私聊/@ 唤醒。只走 Bot API，不依赖 MTProto。",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "author": "dshbot-by-TingXia",
+  "homepage": "https://github.com/dshbot-by-TingXia/dsh-tg-tools#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dshbot-by-TingXia/dsh-tg-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dshbot-by-TingXia/dsh-tg-tools/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "telegram",
+    "telegram-bot-api",
+    "chatbot"
+  ],
+  "files": [
+    "lib",
+    "tools",
+    "locale",
+    "test",
+    "cordis.patch.yml",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./tools/tg-list-chats": "./tools/tg-list-chats/index.js",
+    "./tools/tg-get-chat": "./tools/tg-get-chat/index.js",
+    "./tools/tg-get-history": "./tools/tg-get-history/index.js",
+    "./tools/tg-send-message": "./tools/tg-send-message/index.js",
+    "./tools/tg-send-photo": "./tools/tg-send-photo/index.js",
+    "./tools/tg-send-sticker": "./tools/tg-send-sticker/index.js",
+    "./tools/tg-send-animation": "./tools/tg-send-animation/index.js",
+    "./tools/tg-send-dice": "./tools/tg-send-dice/index.js",
+    "./tools/tg-set-reaction": "./tools/tg-set-reaction/index.js",
+    "./tools/tg-get-sticker-set": "./tools/tg-get-sticker-set/index.js",
+    "./tools/tg-forward-message": "./tools/tg-forward-message/index.js",
+    "./tools/tg-edit-message": "./tools/tg-edit-message/index.js",
+    "./tools/tg-delete-message": "./tools/tg-delete-message/index.js",
+    "./tools/tg-get-chat-members": "./tools/tg-get-chat-members/index.js",
+    "./tools/tg-send-typing": "./tools/tg-send-typing/index.js",
+    "./tools/tg-inbox": "./tools/tg-inbox/index.js",
+    "./locale/zh.json": "./locale/zh.json",
+    "./locale/en.json": "./locale/en.json",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "compatibility": {
+      "dsh": "0.2.x",
+      "node": ">=22"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
+    }
+  }
+}
