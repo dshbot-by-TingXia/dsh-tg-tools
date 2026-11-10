@@ -9,3 +9,4 @@ tg-tools-state.json
 test/.tmp/
 .gitconfig-local
 .git-cred*
+.npm-cache/
