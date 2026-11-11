@@ -83,7 +83,7 @@ dsh plugin --profile <profile> remove dsh-tg-tools
 | `pollTimeout` | 长轮询秒数，1–50 |
 | `wakeOnPrivate` / `wakeOnMention` | 私聊 / 群里 @ 或回复 bot 时唤醒会话 |
 | `wakeAll` | true = `wakeChats` 里的群所有消息都唤醒（可能很吵） |
-| `wakeChats` | 唤醒白名单（只收窄、不扩大接收范围）；空则复用 `chats`。`chats` 与 `wakeChats` 都为空时什么都不接收 |
+| `wakeChats` | 唤醒白名单；写在这里的 chat 也会被接收（只配它也能收）。空则复用 `chats`。两者都为空时什么都不接收 |
 | `timeoutMs` | 单次 API 请求超时 |
 
 ### token 与 409 冲突
