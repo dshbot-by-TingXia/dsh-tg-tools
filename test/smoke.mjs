@@ -71,7 +71,10 @@ const server = createServer((req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 const apiBase = `http://127.0.0.1:${server.address().port}`
 
-const { loadCfg, saveCfg, CFG_PATH, STATE_PATH, allowedWake, wakeAllowlist } = await import('../lib/config.js')
+const {
+  loadCfg, loadCfgCached, saveCfg, CFG_PATH, STATE_PATH,
+  allowedWake, wakeAllowlist, inboundAllowed, inboundAllowlist, diag,
+} = await import('../lib/config.js')
 const { makeSendMessageTool, makeForwardMessageTool, makeEditMessageTool, makeDeleteMessageTool, makeSendTypingTool } =
   await import('../lib/tools/messages.js')
 const { makeListChatsTool, makeGetChatTool, makeHistoryTool, makeMembersTool } = await import('../lib/tools/chats.js')
@@ -79,7 +82,7 @@ const { makeSendPhotoTool } = await import('../lib/tools/media.js')
 const {
   makeSendStickerTool, makeSendAnimationTool, makeSendDiceTool, makeSetReactionTool, makeGetStickerSetTool,
 } = await import('../lib/tools/expressions.js')
-const { getHistory, recordUpdate } = await import('../lib/store.js')
+const { getHistory, recordUpdate, flushState } = await import('../lib/store.js')
 const { renderTool } = await import('../lib/render.js')
 
 const CHAT = '-100111'
@@ -270,15 +273,17 @@ function lastCall(method) {
 
 // 14. 配置文件与状态文件都是 600，token 不出现在诊断日志里
 {
+  flushState()
+  diag('smoke：诊断日志权限测试')
   assert.equal(statSync(CFG_PATH).mode & 0o777, 0o600, '配置文件权限应为 600')
   assert.ok(existsSync(STATE_PATH), '消息缓存应落盘')
   assert.equal(statSync(STATE_PATH).mode & 0o777, 0o600, '状态文件权限应为 600')
   const cfgText = readFileSync(CFG_PATH, 'utf8')
   assert.match(cfgText, /smoke-token/)
   const diagPath = join(home, 'tg-tools-diag.log')
-  if (existsSync(diagPath)) {
-    assert.doesNotMatch(readFileSync(diagPath, 'utf8'), /smoke-token/, '诊断日志不应包含 token')
-  }
+  assert.ok(existsSync(diagPath), '诊断日志应落盘')
+  assert.equal(statSync(diagPath).mode & 0o777, 0o600, '诊断日志权限应为 600')
+  assert.doesNotMatch(readFileSync(diagPath, 'utf8'), /smoke-token/, '诊断日志不应包含 token')
   count++
 }
 
@@ -315,6 +320,45 @@ function lastCall(method) {
 
   saveCfg({ chats: [CHAT], wakeChats: [] })
   assert.equal(allowedWake(CHAT, loadCfg()), true)
+  count++
+}
+
+// 17. 入站门禁：只收白名单 chat；chats ∪ wakeChats 都为空时什么都不收
+{
+  saveCfg({ chats: [], wakeChats: [] })
+  assert.equal(inboundAllowlist(loadCfg()), null, '空名单应返回 null')
+  assert.equal(inboundAllowed(CHAT, loadCfg()), false, '空名单下任何入站消息都不处理')
+
+  saveCfg({ chats: [CHAT], wakeChats: [] })
+  assert.equal(inboundAllowed(CHAT, loadCfg()), true)
+  assert.equal(inboundAllowed(OTHER, loadCfg()), false, '非白名单 chat 的入站消息不处理')
+
+  saveCfg({ chats: [CHAT], wakeChats: [OTHER] })
+  assert.equal(inboundAllowed(OTHER, loadCfg()), true, '只写进 wakeChats 的 chat 也应接收')
+  assert.equal(inboundAllowed('-100222', loadCfg()), false)
+
+  saveCfg({ chats: [CHAT], wakeChats: [] })
+  count++
+}
+
+// 18. 编辑消息不唤醒
+{
+  const { wakeEligible } = await import('../lib/watchers/inbox.js')
+  assert.equal(wakeEligible({ message: { message_id: 1 } }), true, '新消息可唤醒')
+  assert.equal(wakeEligible({ edited_message: { message_id: 1 } }), false, '编辑只更新缓存，不唤醒')
+  assert.equal(wakeEligible({ channel_post: { message_id: 1 } }), true, '频道帖子可唤醒')
+  assert.equal(wakeEligible({}), false)
+  count++
+}
+
+// 19. 配置 TTL 缓存：命中缓存，保存后立即失效
+{
+  const first = loadCfgCached()
+  assert.equal(loadCfgCached(), first, '1 秒内应返回同一个对象')
+  saveCfg({ historyLimit: 77 })
+  assert.notEqual(loadCfgCached(), first, 'saveCfg 后缓存应失效')
+  assert.equal(loadCfgCached().historyLimit, 77)
+  saveCfg({ historyLimit: 50 })
   count++
 }
 
