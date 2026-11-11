@@ -71,7 +71,7 @@ const server = createServer((req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 const apiBase = `http://127.0.0.1:${server.address().port}`
 
-const { saveCfg, CFG_PATH, STATE_PATH } = await import('../lib/config.js')
+const { loadCfg, saveCfg, CFG_PATH, STATE_PATH, allowedWake, wakeAllowlist } = await import('../lib/config.js')
 const { makeSendMessageTool, makeForwardMessageTool, makeEditMessageTool, makeDeleteMessageTool, makeSendTypingTool } =
   await import('../lib/tools/messages.js')
 const { makeListChatsTool, makeGetChatTool, makeHistoryTool, makeMembersTool } = await import('../lib/tools/chats.js')
@@ -279,6 +279,42 @@ function lastCall(method) {
   if (existsSync(diagPath)) {
     assert.doesNotMatch(readFileSync(diagPath, 'utf8'), /smoke-token/, '诊断日志不应包含 token')
   }
+  count++
+}
+
+// 15. 配置接口准入：DNS 重绑定过不去，同源放行
+{
+  const { fallbackTrust, requestGate } = await import('../lib/session.js')
+  const base = { headers: { host: '127.0.0.1:3079' } }
+  assert.equal(fallbackTrust(base), undefined, '回环 Host、无 Origin 应放行')
+  assert.equal(fallbackTrust({ headers: { host: 'evil.example:3079' } }), 403, '非回环 Host 应拒绝（DNS 重绑定）')
+  assert.equal(fallbackTrust({ headers: { host: '127.0.0.1:3079', origin: 'http://evil.example:3079' } }), 403, 'Origin 与 Host 不同应拒绝')
+  assert.equal(fallbackTrust({ headers: { host: '127.0.0.1:3079', 'sec-fetch-site': 'cross-site' } }), 403, 'cross-site 应拒绝')
+  assert.equal(fallbackTrust({ headers: { host: '127.0.0.1:3079', origin: 'http://127.0.0.1:3079' } }), undefined, '同源 Origin 应放行')
+
+  const fakeCtx = { get: (name) => name === 'connection' ? { requestRejection: () => 401 } : undefined }
+  assert.equal(requestGate(fakeCtx, base), 401, '有 Connection 时以它的结论为准')
+  const noConnection = { get: () => undefined }
+  assert.equal(requestGate(noConnection, base), undefined, '没有 Connection 时退回回环围栏')
+  count++
+}
+
+// 16. 入站唤醒 fail-closed：空名单不能等于“谁都能唤醒”
+{
+  assert.equal(wakeAllowlist({ chats: [CHAT], wakeChats: [] }).length, 1)
+  assert.equal(allowedWake(CHAT, { chats: [CHAT], wakeChats: [] }), true)
+  assert.equal(allowedWake(OTHER, { chats: [CHAT], wakeChats: [] }), false)
+
+  saveCfg({ chats: [], wakeChats: [] })
+  assert.equal(wakeAllowlist(loadCfg()), null, '空名单应返回 null')
+  assert.equal(allowedWake(CHAT, loadCfg()), false, '空名单下任何 chat 都不能唤醒')
+
+  saveCfg({ chats: [], wakeChats: [OTHER] })
+  assert.equal(allowedWake(OTHER, loadCfg()), true, 'wakeChats 优先于 chats')
+  assert.equal(allowedWake(CHAT, loadCfg()), false, '不在 wakeChats 里的 chat 不能唤醒')
+
+  saveCfg({ chats: [CHAT], wakeChats: [] })
+  assert.equal(allowedWake(CHAT, loadCfg()), true)
   count++
 }
 

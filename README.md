@@ -41,7 +41,7 @@ dsh plugin --profile <profile> add link:/path/to/dsh-tg-tools
 
 # 离线 tarball
 pnpm pack
-dsh plugin --profile <profile> add ./dsh-tg-tools-1.0.0.tgz
+dsh plugin --profile <profile> add ./dsh-tg-tools-1.0.1.tgz
 ```
 
 `dsh plugin` 会把包追加进 profile 的 `dsh.profile.bundles`，并合并包自带的 `cordis.patch.yml`。安装或升级后重启 DSH 生效。卸载：
@@ -77,13 +77,13 @@ dsh plugin --profile <profile> remove dsh-tg-tools
 | `apiBase` | Bot API 根地址，默认 `https://api.telegram.org`；如果你自己搭了反代，填自己的地址 |
 | `botToken` | BotFather 给的 token；也可以不填，回退到 `TG_TOOLS_BOT_TOKEN` / `TELEGRAM_BOT_TOKEN` 环境变量或 `~/.dsh/.env` |
 | `targetSession` | 工具挂到哪个 DSH 会话；设置页里改，也可以 POST `/api/dsh-tg-tools/target-session` |
-| `chats` | 允许操作的 chat id 或 `@username`；空 = 不限制。**建议写死要操作的 chat** |
+| `chats` | 允许操作的 chat id 或 `@username`；空 = 发消息不限制目标，但**入站唤醒全部拒绝**。**建议写死要操作的 chat** |
 | `historyLimit` / `maxHistoryLimit` | `tg_get_history` 的默认/最大条数 |
 | `pollEnabled` | 是否启动 `getUpdates`；默认关闭 |
 | `pollTimeout` | 长轮询秒数，1–50 |
 | `wakeOnPrivate` / `wakeOnMention` | 私聊 / 群里 @ 或回复 bot 时唤醒会话 |
 | `wakeAll` | true = `wakeChats` 里的群所有消息都唤醒（可能很吵） |
-| `wakeChats` | 唤醒白名单；空则复用 `chats` |
+| `wakeChats` | 唤醒白名单；空则复用 `chats`。两者都为空时不会唤醒任何会话 |
 | `timeoutMs` | 单次 API 请求超时 |
 
 ### token 与 409 冲突
@@ -111,13 +111,15 @@ dsh plugin --profile <profile> remove dsh-tg-tools
 1. 把 bot 收到的消息写进 `~/.dsh/tg-tools-state.json`（每个 chat 最多 300 条），供 `tg_get_history` 读取；
 2. 私聊消息、群里 @/回复 bot（或 `wakeAll`）时，把一条摘要投递给目标会话，并在摘要里提示可用的回复工具。
 
+唤醒是 **fail-closed** 的：`chats` 与 `wakeChats` 都为空时不唤醒任何会话，消息只进本地缓存。因为 bot 的 `@username` 是公开可搜的，任何人先给 bot 发一条消息都能带着自己的文字叫醒会话、消耗模型额度——空名单不能等于“谁都可以”。想收消息唤醒，至少填一个 `chats` 或 `wakeChats`；诊断日志会提示一次“唤醒名单为空”。
+
 bot 自己的消息不入缓存；`edited_message` 按 `message_id` 覆盖原条。bot 离线期间的消息不会补，重启后缓存仍在。
 
 ## 安全与隐私
 
 - bot token 只存在 `~/.dsh/tg-tools-config.json`（600）或环境变量/credential store 里，不写进代码、不进日志；
 - 诊断日志 `~/.dsh/tg-tools-diag.log` 只记 chat id、发送者昵称和消息前 160 字，不含 token；
-- `chats` 白名单为空时插件不限制目标 chat，正式使用建议写死；
+- 出站工具在 `chats` 为空时不限制目标 chat，但入站唤醒需要名单（空名单 = 拒绝唤醒），正式使用建议把要操作的 chat 写死；
 - 只把 bot 拉进你允许它操作的 chat；被拉进不该进的群等于把这些群的读写能力交给它；
 - 自动发消息有平台风控风险，低频、必要时人工确认更稳。
 

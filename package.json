@@ -1,6 +1,6 @@
 {
   "name": "dsh-tg-tools",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "给 DSH 会话用的 Telegram 工具：列 chat、看缓存消息、发消息/图片/贴纸/GIF/骰子、加 reaction、转发/编辑/删除、查成员与 typing，可选的收消息轮询与私聊/@ 唤醒。只走 Bot API，不依赖 MTProto。",
   "type": "module",
   "main": "lib/index.js",
